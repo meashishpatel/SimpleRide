@@ -1,58 +1,93 @@
 package com.simpleride.rideos.presentation.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/** Motor ON / OFF pill. `null` means the signal is unknown and is shown as "--". */
 @Composable
-fun MotorStatus(
-    isMotorOn: Boolean
+fun MotorStatusPill(
+    motorOn: Boolean?,
+    modifier: Modifier = Modifier
 ) {
-    val statusColor = if (isMotorOn) {
-        Color(0xFF21E68A)
-    } else {
-        Color(0xFFFF5252)
+    val label = when (motorOn) {
+        true -> "ON"
+        false -> "OFF"
+        null -> "--"
     }
+    val color = when (motorOn) {
+        true -> HmiColors.Green
+        false -> HmiColors.Red
+        null -> HmiColors.Muted
+    }
+    val background = when (motorOn) {
+        true -> HmiColors.GreenBg
+        false -> HmiColors.RedBg
+        null -> HmiColors.ButtonBg
+    }
+    val shape = RoundedCornerShape(24.dp)
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Color(0xFF111719),
-                RoundedCornerShape(12.dp)
-            )
-            .padding(16.dp)
+    Row(
+        modifier = modifier
+            .semantics { contentDescription = "Motor $label" }
+            .background(background, shape)
+            .border(1.dp, color, shape)
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "MOTOR STATUS",
-            color = Color.Gray,
-            fontSize = 11.sp
+        PowerIcon(color = color)
+        Spacer(Modifier.width(6.dp))
+        Text(text = label, color = color, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun PowerIcon(color: Color) {
+    Canvas(Modifier.size(14.dp)) {
+        val stroke = 2.dp.toPx()
+        drawArc(
+            color = color,
+            startAngle = -60f,
+            sweepAngle = 300f,
+            useCenter = false,
+            style = Stroke(width = stroke, cap = StrokeCap.Round)
         )
+        drawLine(
+            color = color,
+            start = Offset(size.width / 2f, 0f),
+            end = Offset(size.width / 2f, size.height / 2f),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round
+        )
+    }
+}
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(9.dp)
-                    .background(statusColor, RoundedCornerShape(50))
-            )
-
-            Spacer(modifier = Modifier.width(9.dp))
-
-            Text(
-                text = if (isMotorOn) "ON" else "OFF",
-                color = statusColor,
-                fontSize = 23.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+@Preview(backgroundColor = 0xFF000000, showBackground = true)
+@Composable
+private fun MotorStatusPillPreview() {
+    Row {
+        MotorStatusPill(true)
+        MotorStatusPill(false)
+        MotorStatusPill(null)
     }
 }

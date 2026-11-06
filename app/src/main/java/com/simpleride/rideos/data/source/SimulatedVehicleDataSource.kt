@@ -5,57 +5,60 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-class SimulatedVehicleDataSource : VehicleDataSource {
+/**
+ * Emits a looping scripted ride, one sample per [intervalMillis].
+ *
+ * Default script (as required by the assignment):
+ *  Parked -> Ready -> Riding -> Accelerating -> Motor disabled -> (repeat)
+ *
+ * @param scenarios the script to play; overridable for tests or demos.
+ * @param clock     time source used to stamp samples; injectable for tests.
+ */
+class SimulatedVehicleDataSource(
+    private val scenarios: List<Scenario> = DEFAULT_SCENARIOS,
+    private val intervalMillis: Long = DEFAULT_INTERVAL_MILLIS,
+    private val clock: () -> Long = System::currentTimeMillis
+) : VehicleDataSource {
 
-    private val vehicleScenarios = listOf(
-        // Parked
-        VehicleData(
-            speed = 0f,
-            motorOn = false,
-            killSwitchActive = false
-        ),
+    init {
+        require(scenarios.isNotEmpty()) { "At least one scenario is required" }
+        require(intervalMillis > 0) { "intervalMillis must be positive" }
+    }
 
-        // Ready
-        VehicleData(
-            speed = 0f,
-            motorOn = true,
-            killSwitchActive = false
-        ),
-
-        // Riding
-        VehicleData(
-            speed = 25f,
-            motorOn = true,
-            killSwitchActive = false
-        ),
-
-        // Accelerating
-        VehicleData(
-            speed = 50f,
-            motorOn = true,
-            killSwitchActive = false
-        ),
-
-        // Motor disabled
-        VehicleData(
-            speed = 0f,
-            motorOn = false,
-            killSwitchActive = true
-        )
+    data class Scenario(
+        val name: String,
+        val speedKmh: Float?,
+        val motorOn: Boolean?,
+        val killSwitchActive: Boolean?,
+        val batteryPercent: Int? = 100
     )
 
     override fun observeVehicleData(): Flow<VehicleData> = flow {
-
         while (true) {
-            vehicleScenarios.forEach { scenario ->
+            for (scenario in scenarios) {
                 emit(
-                    scenario.copy(
-                        timestamp = System.currentTimeMillis()
+                    VehicleData(
+                        speedKmh = scenario.speedKmh,
+                        motorOn = scenario.motorOn,
+                        killSwitchActive = scenario.killSwitchActive,
+                        timestampMillis = clock(),
+                        batteryPercent = scenario.batteryPercent
                     )
                 )
-
-                delay(1000)
+                delay(intervalMillis)
             }
         }
+    }
+
+    companion object {
+        const val DEFAULT_INTERVAL_MILLIS = 1_000L
+
+        val DEFAULT_SCENARIOS = listOf(
+            Scenario("Parked", speedKmh = 0f, motorOn = false, killSwitchActive = false),
+            Scenario("Ready", speedKmh = 0f, motorOn = true, killSwitchActive = false),
+            Scenario("Riding", speedKmh = 25f, motorOn = true, killSwitchActive = false),
+            Scenario("Accelerating", speedKmh = 50f, motorOn = true, killSwitchActive = false),
+            Scenario("Motor disabled", speedKmh = 0f, motorOn = false, killSwitchActive = true)
+        )
     }
 }

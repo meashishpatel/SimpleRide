@@ -5,14 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.simpleride.rideos.data.repository.VehicleRepository
 import com.simpleride.rideos.data.source.SimulatedVehicleDataSource
@@ -23,31 +16,19 @@ import com.simpleride.rideos.ui.theme.SimpleRideTheme
 
 class MainActivity : ComponentActivity() {
 
-    private val vehicleDataSource by lazy {
-        SimulatedVehicleDataSource()
-    }
-
-    private val vehicleRepository by lazy {
-        VehicleRepository(vehicleDataSource)
-    }
-
+    // Manual wiring: data source -> repository -> ViewModel. A DI framework is not needed at this size.
     private val vehicleViewModel: VehicleViewModel by viewModels {
-        VehicleViewModelFactory(vehicleRepository)
+        VehicleViewModelFactory(VehicleRepository(SimulatedVehicleDataSource()))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         enableEdgeToEdge()
 
         setContent {
             SimpleRideTheme {
-                val state = vehicleViewModel.uiState
-                    .collectAsStateWithLifecycle()
-
-                HomeScreen(
-                    state = state.value
-                )
+                val state by vehicleViewModel.uiState.collectAsStateWithLifecycle()
+                HomeScreen(state = state)
             }
         }
     }
