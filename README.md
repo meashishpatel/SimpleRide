@@ -76,3 +76,11 @@ SimulatedVehicleDataSource ──Flow<VehicleData> -> VehicleData> -> VehicleRep
 | Before the first sample | "Waiting for vehicle data…" with `--` values, not fake numbers |
 
 Values that can't be trusted are blanked rather than frozen. A stale speed reading on a vehicle display is worse than no reading.
+
+## Screenshots
+
+<p align="center">
+  <img src="image.png" width="32%" />
+  <img src="image-1.png" width="32%" />
+  <img src="image-2.png" width="32%" />
+</p>
