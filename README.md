@@ -7,14 +7,8 @@ A landscape Jetpack Compose dashboard for an electric two-wheeler. It shows spee
 **Requirements:** Android Studio (recent stable), JDK 17+, Android SDK with API 36/37, an emulator or device (min API 27).
 
 1. Open the project folder in Android Studio and let Gradle sync.
-2. Select the `app` run configuration and an emulator, e.g. *Pixel Tablet* or any phone image.
-3. Press **Run**. The activity is locked to landscape (`sensorLandscape`).
+2. Press **Run**. The activity is locked to landscape (`sensorLandscape`).
 
-From the command line:
-
-```bash
-./gradlew :app:assembleDebug        # build the APK
-./gradlew :app:installDebug         # install on a running emulator/device
 ```
 
 ## Running the tests
@@ -61,14 +55,13 @@ presentation/
 Data flow (one direction only):
 
 ```
-SimulatedVehicleDataSource ──Flow<VehicleData>──▶ VehicleRepository ──▶ VehicleViewModel
-        ──StateFlow<VehicleUiState>──▶ collectAsStateWithLifecycle() ──▶ HomeScreen
+SimulatedVehicleDataSource ──Flow<VehicleData> -> VehicleData> -> VehicleRepository -> VehicleViewModel
+        ──StateFlow<VehicleUiState> ->  collectAsStateWithLifecycle() -> HomeScreen
 ```
 
 - **Coroutines / Flow:** the simulator is a cold `flow {}` with `delay(1000)`. The ViewModel collects it in `viewModelScope`, so collection stops when the ViewModel is cleared.
 - **StateFlow:** the ViewModel holds one `MutableStateFlow` and exposes it read-only. Updates go through `update {}` and the pure `VehicleStateReducer`.
 - **Lifecycle-aware UI:** `collectAsStateWithLifecycle()` stops collecting while the app is in the background.
-- **Manual DI:** `MainActivity` wires source → repository → ViewModel through `VehicleViewModelFactory`. The ViewModel also takes a `clock`, a timeout and a retry delay, so the tests can control time.
 
 ## Edge cases handled
 
@@ -83,13 +76,3 @@ SimulatedVehicleDataSource ──Flow<VehicleData>──▶ VehicleRepository �
 | Before the first sample | "Waiting for vehicle data…" with `--` values, not fake numbers |
 
 Values that can't be trusted are blanked rather than frozen. A stale speed reading on a vehicle display is worse than no reading.
-
-## Assumptions & limitations
-
-- Only speed, motor, kill switch and battery are simulated. Ride mode (ECO), range, ODO and the 80 km/h speed limit are static placeholders in `VehicleUiState` that fill out the reference layout.
-- "Accelerating" is not a separate ride state. It shows up as the speed rising (25 → 50) under RIDING.
-- Motor OFF does not force speed to 0. If speed > 0 with the motor off, the state is RIDING (coasting).
-- Rapid Brake is derived from the data: a drop of ≥ 20 km/h between two consecutive samples. SuperHold is shown in the READY state. Both are demo interpretations, not real vehicle logic.
-- Status-bar items from the reference (phone pairing, notifications, geofence, etc.), turn indicators, TPMS values and cruise control are not driven by data.
-- Icons are drawn with Canvas or Unicode glyphs instead of vector assets.
-- There are no UI (instrumentation) tests, only JVM unit tests.
